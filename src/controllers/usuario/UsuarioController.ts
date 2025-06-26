@@ -5,6 +5,7 @@ import { typeUsuario, typeUsuarioGoogle } from '../../types/usuarioType';
 import { generateId } from '../../middlewares/generateId';
 import { uploadImagemBuffer } from '../../service/cloudinaryService';
 import { getTokenData } from '../../middlewares/Authenticator';
+import { AvaliacaoClienteRepository } from '../../repositories/avaliacao/AvaliacaoClienteRepository';
 
 const usuarioService = new UsuarioService();
 
@@ -153,12 +154,22 @@ export class UsuarioController {
         }
     };
 
-    public buscarUsuariosPorId = async (req: Request,res: Response): Promise<void> => {
+    public buscarUsuariosPorId = async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
-
-            const usuarios = await usuarioService.buscarUsuarioPorId(id);
-            res.status(200).json(usuarios);
+    
+            const usuario = await usuarioService.buscarUsuarioPorId(id);
+    
+            if (!usuario) {
+                res.status(404).json({ error: 'Usuário não encontrado' });
+            }
+    
+            const avaliacaoRepo = new AvaliacaoClienteRepository();
+    
+            const avaliacoes = await avaliacaoRepo.calcularMediaUsuario(id);
+    
+            const totalAvaliacoes = avaliacoes.length;
+            res.status(200).json({ ...usuario.toObject(), totalAvaliacoes });
         } catch (error: unknown) {
             if (error instanceof CustomError) {
                 res.status(error.statusCode).json({ error: error.message });

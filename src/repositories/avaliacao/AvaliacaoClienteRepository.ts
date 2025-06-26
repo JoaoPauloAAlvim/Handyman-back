@@ -6,6 +6,9 @@ export class AvaliacaoClienteRepository {
     private model = new AvaliacaoCliente().getModel();
     private usuarioModel = Usuario.getInstance().getModel();
 
+    constructor() {
+    }
+
     public async criarAvaliacaoCliente(avaliacao: typeAvaliacaoCliente): Promise<IAvaliacaoCliente> {
         try {
             const avaliacaoSalvar = new this.model(avaliacao);
@@ -29,7 +32,6 @@ export class AvaliacaoClienteRepository {
             throw new Error(`Erro ao calcular média: ${error}`);
         }
     }
-
     private async atualizarMediaUsuario(id_usuario: string) {
         try {
             const avaliacoes = await this.model.find({ id_usuario });

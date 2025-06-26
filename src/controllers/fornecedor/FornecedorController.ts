@@ -3,6 +3,7 @@ import { FornecedorService } from '../../service/fornecedor/FornecedorService';
 import { CustomError } from '../../service/CustomError';
 import { typeFornecedor } from '../../types/fornecedorType';
 import { uploadImagemBuffer } from '../../service/cloudinaryService';
+import { AvaliacaoRepositories } from '../../repositories/avaliacao/AvaliacaoRepositories';
 
 
 const fornecedorService = new FornecedorService();
@@ -185,7 +186,11 @@ export class FornecedorController {
         try {
             const { id } = req.params;
             const fornecedor = await fornecedorService.buscarFornecedorPorId(id);
-            res.status(200).json(fornecedor);
+            // Buscar avaliações do fornecedor
+            const avaliacaoRepo = new AvaliacaoRepositories();
+            const avaliacoes = await avaliacaoRepo.calcularMediaFornecedor(id);
+            const total_avaliacoes = avaliacoes.length;
+            res.status(200).json({ ...fornecedor, total_avaliacoes });
         } catch (error: unknown) {
             if (error instanceof CustomError) {
                 res.status(error.statusCode).json({ error: error.message });

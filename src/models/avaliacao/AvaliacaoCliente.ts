@@ -24,7 +24,9 @@ export class AvaliacaoCliente extends BaseBancoDeDados {
             comentario: { type: String, required: true },
             data: { type: Date, default: Date.now }
         });
-        this.model = mongoose.model<IAvaliacaoCliente>('avaliacoes_cliente', this.schema);
+        this.model = mongoose.models['avaliacoes_cliente']
+            ? mongoose.model<IAvaliacaoCliente>('avaliacoes_cliente')
+            : mongoose.model<IAvaliacaoCliente>('avaliacoes_cliente', this.schema);
     }
 
     public getModel() {
