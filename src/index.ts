@@ -9,6 +9,7 @@ import { mensagemRouter } from './routes/mensagem/mensagemRoutes';
 import { pagamentoRouter } from './routes/pagamento/PagamentoRouter';
 import { servicoRouter } from './routes/servicoAgendado/ServicoRoutes';
 import avaliacaoRouter from './routes/avaliacao/AvaliacaoRoutes';
+import avaliacaoClienteRouter from './routes/avaliacao/AvaliacaoClienteRoutes';
 import { SocketConfig } from './config/Socket';
 
 
@@ -20,6 +21,7 @@ app.use('/mensagem', mensagemRouter);
 app.use('/pagamento',pagamentoRouter);
 app.use('/servicos',servicoRouter);
 app.use('/avaliacao',avaliacaoRouter);
+app.use('/avaliacao-cliente', avaliacaoClienteRouter);
 
 /// Cria servidor HTTP
 const server = http.createServer(app);

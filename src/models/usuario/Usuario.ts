@@ -17,6 +17,7 @@ export interface IUsuario extends Document {
     picture:string
     role:string
      // 'local' ou 'google'
+    media_avaliacoes: number;
 }
 
 const enderecoSchema = new Schema({
@@ -51,7 +52,8 @@ export class Usuario extends BaseBancoDeDados {
             autenticacaoVia: { type: String, enum: ['local', 'google'], default: 'local' },
             sub: { type: String, required: false }, // Opcional para Google
             picture: { type: String, required: false }, // Opcional para Google
-            role: { type:String }
+            role: { type:String },
+            media_avaliacoes: { type: Number, default: 0 }
         });
         
 

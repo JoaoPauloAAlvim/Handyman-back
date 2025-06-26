@@ -185,7 +185,8 @@ export class ServicoRepository {
                     nome: usuario.nome,
                     email: usuario.email,
                     telefone: usuario.telefone,
-                    endereco:usuario.endereco
+                    endereco: usuario.endereco,
+                    media_avaliacoes: usuario.media_avaliacoes
                 } : null
             };
 

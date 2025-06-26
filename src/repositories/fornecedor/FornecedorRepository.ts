@@ -209,7 +209,8 @@ export class FornecedorRepository {
               data_submisao:servico.data_submisao,
               descricao: servico.descricao,
               id_pagamento: servico.id_pagamento,
-              id_avaliacao: servico.id_avaliacao
+              id_avaliacao: servico.id_avaliacao,
+              avaliado: servico.avaliado
             },
             usuario: usuario ? {
               id_usuario: usuario.id_usuario,
