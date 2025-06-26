@@ -11,12 +11,12 @@ export interface IAvaliacao extends Document {
 }
 
 export class Avaliacao extends BaseBancoDeDados {
+    private static instance: Avaliacao;
     private schema: Schema<IAvaliacao>;
     private model;
 
-    constructor() {
+    private constructor() {
         super();
-        
         this.schema = new Schema<IAvaliacao>({
             id_servico: { type: String, required: true },
             id_usuario: { type: String, required: true },
@@ -25,12 +25,17 @@ export class Avaliacao extends BaseBancoDeDados {
             comentario: { type: String, required: true },
             data: { type: Date, default: Date.now }
         });
+        this.model = mongoose.models.avaliacoes || mongoose.model<IAvaliacao>('avaliacoes', this.schema);
+    }
 
-        this.model = mongoose.model<IAvaliacao>('avaliacoes', this.schema);
+    public static getInstance() {
+        if (!Avaliacao.instance) {
+            Avaliacao.instance = new Avaliacao();
+        }
+        return Avaliacao.instance;
     }
 
     public getModel() {
         return this.model;
     }
-
 } 

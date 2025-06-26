@@ -11,6 +11,7 @@ import { servicoRouter } from './routes/servicoAgendado/ServicoRoutes';
 import avaliacaoRouter from './routes/avaliacao/AvaliacaoRoutes';
 import avaliacaoClienteRouter from './routes/avaliacao/AvaliacaoClienteRoutes';
 import { SocketConfig } from './config/Socket';
+import './cron/cronResetarServicosSemana';
 
 
 // Rotas

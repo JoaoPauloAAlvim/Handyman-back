@@ -3,7 +3,7 @@ import { Fornecedor } from "../../models/fornecedor/Fornecedor";
 import { typeAvaliacao } from "../../types/avaliacaoType";
 
 export class AvaliacaoRepositories{
-    private model = new Avaliacao().getModel();
+    private model = Avaliacao.getInstance().getModel();
     private fornecedorModel = Fornecedor.getInstance().getModel();
 
     public async criarAvaliacao(avaliacao:typeAvaliacao): Promise<IAvaliacao> {
@@ -40,7 +40,7 @@ export class AvaliacaoRepositories{
             const avaliacoes = await this.model.find({ id_fornecedor });
             if (avaliacoes.length === 0) return;
 
-            const soma = avaliacoes.reduce((acc, curr) => acc + curr.nota, 0);
+            const soma = avaliacoes.reduce((acc: number, curr: IAvaliacao) => acc + curr.nota, 0);
             const media = soma / avaliacoes.length;
 
             // Atualiza a média no documento do fornecedor usando id_fornecedor

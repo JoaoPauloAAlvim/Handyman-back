@@ -4,6 +4,7 @@ import { CustomError } from '../../service/CustomError';
 import { typeFornecedor } from '../../types/fornecedorType';
 import { uploadImagemBuffer } from '../../service/cloudinaryService';
 import { AvaliacaoRepositories } from '../../repositories/avaliacao/AvaliacaoRepositories';
+import { ServicoModel } from "../../models/servicoAgendado/Servico";
 
 
 const fornecedorService = new FornecedorService();
@@ -190,8 +191,21 @@ export class FornecedorController {
             const avaliacaoRepo = new AvaliacaoRepositories();
             const avaliacoes = await avaliacaoRepo.calcularMediaFornecedor(id);
             const total_avaliacoes = avaliacoes.length;
-            res.status(200).json({ ...fornecedor, total_avaliacoes });
+
+            // Buscar número de serviços concluídos na semana
+            const umaSemanaAtras = new Date();
+            umaSemanaAtras.setDate(umaSemanaAtras.getDate() - 7);
+            const servicosConcluidosSemana = await ServicoModel.countDocuments({
+                id_fornecedor: id,
+                status: 'concluido',
+                data: { $gte: umaSemanaAtras }
+            });
+            const metaSemana = 10;
+
+            const fornecedorObj = typeof (fornecedor as any).toObject === 'function' ? (fornecedor as any).toObject() : fornecedor;
+            res.status(200).json({ ...fornecedorObj, total_avaliacoes, servicosConcluidosSemana, metaSemana });
         } catch (error: unknown) {
+            console.error(error);
             if (error instanceof CustomError) {
                 res.status(error.statusCode).json({ error: error.message });
             } else {
