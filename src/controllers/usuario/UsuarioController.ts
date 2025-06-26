@@ -157,7 +157,7 @@ export class UsuarioController {
     public buscarUsuariosPorId = async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
-    
+
             const usuario = await usuarioService.buscarUsuarioPorId(id);
     
             if (!usuario) {

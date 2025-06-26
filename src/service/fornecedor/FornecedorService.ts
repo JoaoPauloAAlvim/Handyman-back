@@ -6,6 +6,7 @@ import { BaseService } from '../BaseService';
 import { hash, compare } from '../../middlewares/hashManager';
 import { generateToken } from '../../middlewares/Authenticator';
 import { generateId } from '../../middlewares/generateId';
+import { ServicoModel } from '../../models/servicoAgendado/Servico';
 
 export class FornecedorService extends BaseService {
     private fornecedorRepository: FornecedorRepository;
@@ -110,25 +111,57 @@ export class FornecedorService extends BaseService {
         categoria_servico: string,
         ordenarPor?: 'avaliacao' | 'preco',
         ordem: 'asc' | 'desc' = 'desc'
-    ): Promise<typeFornecedor[]> {
+    ): Promise<any[]> {
         try {
-            
-            // Se a categoria for undefined, null, vazia ou só espaços
             if (categoria_servico === "Controle") {
                 const todosFornecedores = await this.fornecedorRepository.buscarFornecedores();
                 if (todosFornecedores.length === 0) {
                     throw new CustomError('Nenhum fornecedor encontrado', 404);
                 }
-                return this.ordenarFornecedores(todosFornecedores, ordenarPor, ordem);
+                // Calcular progresso para todos
+                const todosComProgresso = await Promise.all(todosFornecedores.map(async (fornecedor) => {
+                    // Início da semana (segunda-feira 00:00)
+                    const now = new Date();
+                    const day = now.getDay();
+                    const diff = (day === 0 ? -6 : 1) - day; // Se domingo, volta 6 dias, senão volta para segunda
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() + diff);
+                    startOfWeek.setHours(0, 0, 0, 0);
+                    const servicosConcluidosSemana = await ServicoModel.countDocuments({
+                        id_fornecedor: fornecedor.id_fornecedor,
+                        status: 'concluido',
+                        data: { $gte: startOfWeek }
+                    });
+                    const metaSemana = 10;
+                    const destaqueSemana = servicosConcluidosSemana >= metaSemana;
+                    return { ...fornecedor.toObject?.() || fornecedor, servicosConcluidosSemana, metaSemana, destaqueSemana };
+                }));
+                return this.ordenarFornecedores(todosComProgresso, ordenarPor, ordem);
             }
 
             const fornecedores = await this.fornecedorRepository.buscarFornecedoresPorCategoria(categoria_servico);
-            
             if(fornecedores.length === 0){
                 throw new CustomError('Categoria inexistente', 404);
             }
-
-            return this.ordenarFornecedores(fornecedores, ordenarPor, ordem);
+            // Calcular progresso para cada fornecedor
+            const fornecedoresComProgresso = await Promise.all(fornecedores.map(async (fornecedor) => {
+                // Início da semana (segunda-feira 00:00)
+                const now = new Date();
+                const day = now.getDay();
+                const diff = (day === 0 ? -6 : 1) - day;
+                const startOfWeek = new Date(now);
+                startOfWeek.setDate(now.getDate() + diff);
+                startOfWeek.setHours(0, 0, 0, 0);
+                const servicosConcluidosSemana = await ServicoModel.countDocuments({
+                    id_fornecedor: fornecedor.id_fornecedor,
+                    status: 'concluido',
+                    data: { $gte: startOfWeek }
+                });
+                const metaSemana = 10;
+                const destaqueSemana = servicosConcluidosSemana >= metaSemana;
+                return { ...fornecedor.toObject?.() || fornecedor, servicosConcluidosSemana, metaSemana, destaqueSemana };
+            }));
+            return this.ordenarFornecedores(fornecedoresComProgresso, ordenarPor, ordem);
         } catch (error) {
             this.handleError(error);
         }
