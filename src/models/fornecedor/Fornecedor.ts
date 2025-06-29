@@ -20,6 +20,8 @@ export interface IFornecedor extends Document {
     imagemServicos: string[]
     solicitacoes: string[];
     media_avaliacoes: number;
+    servicosConcluidosSemana: number;
+    destaqueSemana: boolean;
 }
 
 const enderecoSchema = new Schema({
@@ -62,7 +64,9 @@ export class Fornecedor extends BaseBancoDeDados {
             valor:{ type:Number,required:true },
             disponibilidade: [{ type: disponibilidadeSchema, required: true }],
             solicitacoes: [{ type: String }],
-            media_avaliacoes: { type: Number, default: 0 }
+            media_avaliacoes: { type: Number, default: 0 },
+            servicosConcluidosSemana: { type: Number, default: 0 },
+            destaqueSemana: { type: Boolean, default: false }
         });
 
         try {

@@ -47,15 +47,20 @@ export class SocketConfig {
         // Configuração inicial do Socket.IO
         this.io = new Server(server, {
             cors: {
-                origin: '*',
-                methods: ['GET', 'POST']
+                origin: "*",
+                methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                allowedHeaders: ["Content-Type", "Authorization"],
+                credentials: true
             },
             pingTimeout: 60000, // Timeout para ping
-            pingInterval: 25000 // Intervalo de ping
+            pingInterval: 25000, // Intervalo de ping
+            transports: ['websocket', 'polling'] // Suporte a WebSocket e polling
         });
 
         this.mensagemService = new MensagemService();
         this.configureEvents();
+        
+        console.log('Socket.IO configurado com CORS permitindo todas as origens');
     }
 
     private configureEvents(): void {
@@ -71,6 +76,12 @@ export class SocketConfig {
             socket.on('join', (userId: string) => {
                 socket.join(userId);
                 console.log(`Usuário ${userId} entrou na sala ${userId}`);
+            });
+
+            // Evento de teste
+            socket.on('teste', (data) => {
+                console.log('Evento de teste recebido:', data);
+                socket.emit('teste_resposta', { message: 'Teste respondido pelo servidor' });
             });
 
             // Evento de mensagem
@@ -165,6 +176,20 @@ export class SocketConfig {
     public emitirAtualizacaoValor(update: ValorUpdate, id_usuario: string, id_fornecedor: string): void {
         this.io.to(id_usuario).emit('valor_atualizado', update);
         this.io.to(id_fornecedor).emit('valor_atualizado', update);
+    }
+
+    // Método para emitir eventos de destaque para todos os clientes
+    public emitirDestaqueAtualizado(data: any): void {
+        console.log('Emitindo evento destaqueAtualizado para todos os clientes:', data);
+        this.io.emit('destaqueAtualizado', data);
+        console.log('Evento destaqueAtualizado emitido com sucesso');
+    }
+
+    // Método para emitir eventos de reset para todos os clientes
+    public emitirFornecedoresResetados(data: any): void {
+        console.log('Emitindo evento fornecedoresResetados para todos os clientes:', data);
+        this.io.emit('fornecedoresResetados', data);
+        console.log('Evento fornecedoresResetados emitido com sucesso');
     }
 
     // Getter para a instância do Socket.IO

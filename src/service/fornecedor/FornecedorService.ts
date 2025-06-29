@@ -109,7 +109,7 @@ export class FornecedorService extends BaseService {
 
     public async buscarFornecedorPorCategoria (
         categoria_servico: string,
-        ordenarPor?: 'avaliacao' | 'preco',
+        ordenarPor?: 'avaliacao' | 'preco' | 'destaque',
         ordem: 'asc' | 'desc' = 'desc'
     ): Promise<any[]> {
         try {
@@ -118,24 +118,13 @@ export class FornecedorService extends BaseService {
                 if (todosFornecedores.length === 0) {
                     throw new CustomError('Nenhum fornecedor encontrado', 404);
                 }
-                // Calcular progresso para todos
-                const todosComProgresso = await Promise.all(todosFornecedores.map(async (fornecedor) => {
-                    // Início da semana (segunda-feira 00:00)
-                    const now = new Date();
-                    const day = now.getDay();
-                    const diff = (day === 0 ? -6 : 1) - day; // Se domingo, volta 6 dias, senão volta para segunda
-                    const startOfWeek = new Date(now);
-                    startOfWeek.setDate(now.getDate() + diff);
-                    startOfWeek.setHours(0, 0, 0, 0);
-                    const servicosConcluidosSemana = await ServicoModel.countDocuments({
-                        id_fornecedor: fornecedor.id_fornecedor,
-                        status: 'concluido',
-                        data: { $gte: startOfWeek }
-                    });
+                // Usa os campos do banco de dados em vez de recalcular
+                const todosComProgresso = todosFornecedores.map((fornecedor) => {
+                    const servicosConcluidosSemana = fornecedor.servicosConcluidosSemana || 0;
                     const metaSemana = 10;
-                    const destaqueSemana = servicosConcluidosSemana >= metaSemana;
+                    const destaqueSemana = fornecedor.destaqueSemana || false;
                     return { ...fornecedor.toObject?.() || fornecedor, servicosConcluidosSemana, metaSemana, destaqueSemana };
-                }));
+                });
                 return this.ordenarFornecedores(todosComProgresso, ordenarPor, ordem);
             }
 
@@ -143,24 +132,13 @@ export class FornecedorService extends BaseService {
             if(fornecedores.length === 0){
                 throw new CustomError('Categoria inexistente', 404);
             }
-            // Calcular progresso para cada fornecedor
-            const fornecedoresComProgresso = await Promise.all(fornecedores.map(async (fornecedor) => {
-                // Início da semana (segunda-feira 00:00)
-                const now = new Date();
-                const day = now.getDay();
-                const diff = (day === 0 ? -6 : 1) - day;
-                const startOfWeek = new Date(now);
-                startOfWeek.setDate(now.getDate() + diff);
-                startOfWeek.setHours(0, 0, 0, 0);
-                const servicosConcluidosSemana = await ServicoModel.countDocuments({
-                    id_fornecedor: fornecedor.id_fornecedor,
-                    status: 'concluido',
-                    data: { $gte: startOfWeek }
-                });
+            // Usa os campos do banco de dados em vez de recalcular
+            const fornecedoresComProgresso = fornecedores.map((fornecedor) => {
+                const servicosConcluidosSemana = fornecedor.servicosConcluidosSemana || 0;
                 const metaSemana = 10;
-                const destaqueSemana = servicosConcluidosSemana >= metaSemana;
+                const destaqueSemana = fornecedor.destaqueSemana || false;
                 return { ...fornecedor.toObject?.() || fornecedor, servicosConcluidosSemana, metaSemana, destaqueSemana };
-            }));
+            });
             return this.ordenarFornecedores(fornecedoresComProgresso, ordenarPor, ordem);
         } catch (error) {
             this.handleError(error);
@@ -170,7 +148,7 @@ export class FornecedorService extends BaseService {
     public async buscarFornecedorPorTermo(
         categoria_servico: string,
         termo: string,
-        ordenarPor?: 'avaliacao' | 'preco',
+        ordenarPor?: 'avaliacao' | 'preco' | 'destaque',
         ordem: 'asc' | 'desc' = 'desc'
     ): Promise<typeFornecedor[]> {
         try {
@@ -192,7 +170,7 @@ export class FornecedorService extends BaseService {
 
     private ordenarFornecedores(
         fornecedores: typeFornecedor[],
-        ordenarPor?: 'avaliacao' | 'preco',
+        ordenarPor?: 'avaliacao' | 'preco' | 'destaque',
         ordem: 'asc' | 'desc' = 'desc'
     ): typeFornecedor[] {
         if (!ordenarPor) return fornecedores;
@@ -201,17 +179,28 @@ export class FornecedorService extends BaseService {
             let valorA: number;
             let valorB: number;
 
-            if (ordenarPor === 'avaliacao') {
-                valorA = a.media_avaliacoes || 0;
-                valorB = b.media_avaliacoes || 0;
-            } else if (ordenarPor === 'preco') {
-                valorA = a.valor || 0;
-                valorB = b.valor || 0;
-            } else {
-                return 0;
+            switch (ordenarPor) {
+                case 'avaliacao':
+                    valorA = a.media_avaliacoes || 0;
+                    valorB = b.media_avaliacoes || 0;
+                    break;
+                case 'preco':
+                    valorA = a.valor || 0;
+                    valorB = b.valor || 0;
+                    break;
+                case 'destaque':
+                    valorA = (a as any).destaqueSemana ? 1 : 0;
+                    valorB = (b as any).destaqueSemana ? 1 : 0;
+                    break;
+                default:
+                    return 0;
             }
 
-            return ordem === 'asc' ? valorA - valorB : valorB - valorA;
+            if (ordem === 'asc') {
+                return valorA - valorB;
+            } else {
+                return valorB - valorA;
+            }
         });
     }
 

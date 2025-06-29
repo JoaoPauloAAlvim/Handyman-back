@@ -5,6 +5,7 @@ import { UsuarioRepository } from "../../repositories/usuario/UsuarioRepository"
 import { typeServico, ServicoComUsuario } from "../../types/servicoType";
 import { BaseService } from "../BaseService";
 import { CustomError } from "../CustomError";
+import { io } from "../../index";
 
 export class ServicoService extends BaseService {
     private servicoRepository = new ServicoRepository();
@@ -45,9 +46,61 @@ export class ServicoService extends BaseService {
                 throw new CustomError('Servico não encontrado',404);
             }
 
+            // Se o status foi alterado para 'concluído' ou 'concluido', incrementa a contagem semanal do fornecedor
+            if ((dadosAtualizados.status === 'concluído' || dadosAtualizados.status === 'concluido') && 
+                (servico.status === 'concluído' || servico.status === 'concluido')) {
+                await this.incrementarContagemSemanal(servico.id_fornecedor);
+            }
+
             return servico;
         }catch(error){
             this.handleError(error);
+        }
+    }
+
+    // Método para incrementar a contagem semanal do fornecedor
+    private async incrementarContagemSemanal(id_fornecedor: string) {
+        try {
+            const fornecedor = await this.fornecedorRepository.buscarFornecedorPorId(id_fornecedor);
+            
+            if (!fornecedor) {
+                console.error('Fornecedor não encontrado para incrementar contagem semanal');
+                return;
+            }
+
+            const novaContagem = (fornecedor.servicosConcluidosSemana || 0) + 1;
+            const destaqueSemana = novaContagem >= 10;
+
+            // Atualiza a contagem e o destaque usando o modelo diretamente
+            const { Fornecedor } = await import('../../models/fornecedor/Fornecedor');
+            await Fornecedor.getInstance().getModel().updateOne(
+                { id_fornecedor },
+                { 
+                    $set: { 
+                        servicosConcluidosSemana: novaContagem,
+                        destaqueSemana: destaqueSemana
+                    } 
+                }
+            );
+
+            console.log(`Fornecedor ${fornecedor.nome} completou ${novaContagem} serviços esta semana`);
+
+            // Emite evento via Socket.IO toda vez que um serviço for concluído
+            io.emit('destaqueAtualizado', {
+                message: 'Serviço concluído - contagem atualizada',
+                timestamp: new Date().toISOString(),
+                fornecedor: {
+                    id: fornecedor.id_fornecedor,
+                    nome: fornecedor.nome,
+                    servicosConcluidos: novaContagem,
+                    destaqueSemana: destaqueSemana
+                }
+            });
+            
+            console.log('Evento destaqueAtualizado emitido via Socket.IO');
+
+        } catch (error) {
+            console.error('Erro ao incrementar contagem semanal:', error);
         }
     }
 

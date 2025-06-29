@@ -30,4 +30,5 @@ export type typeFornecedor = {
     disponibilidade: typeDisponibilidade[];
     solicitacoes: string[];
     media_avaliacoes: number;
+    servicosConcluidosSemana?: number;
 } 

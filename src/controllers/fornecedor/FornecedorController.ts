@@ -192,14 +192,8 @@ export class FornecedorController {
             const avaliacoes = await avaliacaoRepo.calcularMediaFornecedor(id);
             const total_avaliacoes = avaliacoes.length;
 
-            // Buscar número de serviços concluídos na semana
-            const umaSemanaAtras = new Date();
-            umaSemanaAtras.setDate(umaSemanaAtras.getDate() - 7);
-            const servicosConcluidosSemana = await ServicoModel.countDocuments({
-                id_fornecedor: id,
-                status: 'concluido',
-                data: { $gte: umaSemanaAtras }
-            });
+            // Usar o campo do banco, não recalcular
+            const servicosConcluidosSemana = fornecedor.servicosConcluidosSemana ?? 0;
             const metaSemana = 10;
 
             const fornecedorObj = typeof (fornecedor as any).toObject === 'function' ? (fornecedor as any).toObject() : fornecedor;
@@ -220,12 +214,12 @@ export class FornecedorController {
             const { ordenarPor, ordem } = req.query;
 
             // Validação dos parâmetros de ordenação
-            const ordenacaoValida = ['avaliacao', 'preco'].includes(ordenarPor as string);
+            const ordenacaoValida = ['avaliacao', 'preco', 'destaque'].includes(ordenarPor as string);
             const ordemValida = ['asc', 'desc'].includes(ordem as string);
 
             const fornecedores = await fornecedorService.buscarFornecedorPorCategoria(
                 categoria_servico,
-                ordenarPor as 'avaliacao' | 'preco' | undefined,
+                ordenarPor as 'avaliacao' | 'preco' | 'destaque' | undefined,
                 ordem as 'asc' | 'desc' | undefined
             );
             res.status(200).json(fornecedores);
